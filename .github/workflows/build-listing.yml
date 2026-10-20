@@ -45,7 +45,17 @@ jobs:
             ${{env.pathToCi}}/.nuke/temp
             ~/.nuget/packages
           key: ${{ runner.os }}-${{ hashFiles('**/global.json', '**/*.csproj') }}
-          
+
+      # The runner's default .NET SDK (10.x) breaks the multi-target PackageBuilder build,
+      # so pin the SDK to 8.0 which the package-list-action is known to work with.
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Pin .NET SDK
+        run: dotnet new globaljson --sdk-version "$(dotnet --list-sdks | grep '^8\.' | tail -n1 | cut -d' ' -f1)" --roll-forward latestFeature --force
+
       - name: Build Package Version Listing
         run: ${{env.pathToCi}}/build.cmd BuildMultiPackageListing --root ${{env.pathToCi}} --list-publish-directory $GITHUB_WORKSPACE/${{env.listPublishDirectory}}
         env:
